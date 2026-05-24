@@ -11,13 +11,13 @@
         h2 { margin-top: 0; color: #d2232a; font-size: 15pt; text-align: center; letter-spacing: 1px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 10.5pt; color: #444; }
-        input, select { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 11pt; background-color: #fff; }
+        input, select, textarea { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 11pt; background-color: #fff; }
+        textarea { resize: vertical; font-family: inherit; }
         .btn { width: 100%; background-color: #d2232a; color: white; border: none; padding: 13px; border-radius: 6px; font-size: 12pt; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn:disabled { background-color: #ccc; }
         .uid-box { background-color: #f0fff4; border: 2px dashed #28a745; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 10pt; color: #155724; word-break: break-all; text-align: center; }
         .section-title { font-weight: bold; color: #111; margin: 20px 0 10px 0; font-size: 11pt; }
         
-        /* 時間組合框排版，讓小時與分鐘並排 */
         .time-combo { display: flex; align-items: center; gap: 8px; }
         .time-combo select { flex: 1; }
         .time-separator { font-weight: bold; font-size: 14pt; color: #555; }
@@ -39,10 +39,10 @@
         </div>
 
         <div class="form-group">
-            <label>2. 請輸入「今日實際下班時間」</label>
+            <label>2. 請輸入「今日實際下班時間」<span style="color:#888; font-weight:normal;">(沒加班不用填)</span></label>
             <div class="time-combo">
-                <select id="duty-end-hour" required>
-                    <option value="">-- 小時 --</option>
+                <select id="duty-end-hour">
+                    <option value="">-- 正常下班（無加班） --</option>
                     <script>
                         for(let i=0; i<24; i++) {
                             let hr = i < 10 ? '0' + i : i;
@@ -50,13 +50,17 @@
                         }
                     </script>
                 </select>
-                <div class="time-separator">:</div>
-                <select id="duty-end-minute" required>
-                    <option value="">-- 分鐘 --</option>
+                <div class="time-separator" id="sep-duty" style="display:none;">:</div>
+                <select id="duty-end-minute" style="display:none;">
                     <option value="00">00 分</option>
                     <option value="30">30 分</option>
                 </select>
             </div>
+        </div>
+
+        <div class="form-group" id="ot-note-group">
+            <label>加班事由 / 備註</label>
+            <textarea id="ot-note" rows="2" placeholder="請簡述加班原因 (例如: 站點大調度、車輛維修)"></textarea>
         </div>
 
         <div style="border-top: 2px dashed #eee; margin: 20px 0;"></div>
@@ -104,16 +108,27 @@
             </div>
         </div>
 
+        <div class="form-group">
+            <label>油資巡邏備註</label>
+            <textarea id="gas-note" rows="2" placeholder="如有特殊巡邏狀況請註記 (例如: 至通霄站跨區巡邏、公務加油)"></textarea>
+        </div>
+
         <button type="submit" class="btn" id="submit-btn" disabled>確認送出報支</button>
     </form>
 </div>
 
 <script>
-    // ⚠️ 記得換上你的 LINE LIFF ID 與 你的 Google 網址
     const MY_LIFF_ID = '2010178820-ANKUf0Qe'; 
     const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxYtIsyFSwA_qDnqSekw4i-hqnPQitBbRxzqpnJvNj-Fo6JMf0ifJ0jVJKee-ExdUlk/exec'; 
 
     let userId = "";
+
+    // 💡 貼心小 UI：當同仁選了下班小時，才顯示分鐘選單
+    document.getElementById('duty-end-hour').addEventListener('change', function() {
+        const hasValue = this.value !== "";
+        document.getElementById('duty-end-minute').style.display = hasValue ? 'block' : 'none';
+        document.getElementById('sep-duty').style.display = hasValue ? 'block' : 'none';
+    });
 
     async function initLiff() {
         try {
@@ -141,30 +156,33 @@
         document.getElementById('submit-btn').disabled = true;
         document.getElementById('submit-btn').innerText = "寫入試算表中...";
 
-        // 組合下班時間 (格式固定為 HH:MM)
+        // 組合下班時間 (有選才組合，沒選就保持空字串)
+        let dutyEndTimeStr = "";
         const dEHr = document.getElementById('duty-end-hour').value;
         const dEMin = document.getElementById('duty-end-minute').value;
-        let dutyEndTimeStr = dEHr + ":" + dEMin;
+        if (dEHr && dEMin) {
+            dutyEndTimeStr = dEHr + ":" + dEMin;
+        }
 
         // 組合油資巡邏時間
         let gasStartStr = "";
         let gasEndStr = "";
-        
         const sHr = document.getElementById('start-hour').value;
         const sMin = document.getElementById('start-minute').value;
         const eHr = document.getElementById('end-hour').value;
         const eMin = document.getElementById('end-minute').value;
-        
         if (sHr && sMin) gasStartStr = sHr + ":" + sMin;
         if (eHr && eMin) gasEndStr = eHr + ":" + eMin;
 
-        // 💡 關鍵變更：將 otHours 改成傳送 endTime
+        // 💡 封裝全新 JSON 封包 (包含雙備註)
         const formData = {
             userId: userId,
             date: document.getElementById('report-date').value,
             endTime: dutyEndTimeStr,
+            otNote: document.getElementById('ot-note').value.trim(),
             gasStart: gasStartStr,
-            gasEnd: gasEndStr
+            gasEnd: gasEndStr,
+            gasNote: document.getElementById('gas-note').value.trim()
         };
 
         fetch(GAS_WEBAPP_URL, {
