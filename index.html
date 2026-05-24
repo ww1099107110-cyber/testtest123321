@@ -80,7 +80,8 @@
             } else {
                 const profile = await liff.getProfile();
                 userId = profile.userId;
-                document.getElementById('user-info').innerHTML = "經辦同仁：<b>" + profile.displayName + "</b> (已安全連線)";
+// 加上下面這一行，直接把 UID 吐在手機畫面上！
+document.getElementById('user-info').innerHTML = "經辦同仁：<b>" + profile.displayName + "</b><br><span style='color:blue; font-size:9pt;'>您的UID (長按複製)：" + userId + "</span>";
                 document.getElementById('submit-btn').disabled = false;
                 
                 // 自動將日期預設為今天
