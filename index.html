@@ -11,20 +11,27 @@
         h2 { margin-top: 0; color: #d2232a; font-size: 15pt; text-align: center; letter-spacing: 1px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 10.5pt; color: #444; }
-        input, select { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 11pt; -webkit-appearance: none; }
-        input[type="time"] { min-height: 40px; }
+        input, select { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 11pt; }
         .btn { width: 100%; background-color: #d2232a; color: white; border: none; padding: 13px; border-radius: 6px; font-size: 12pt; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn:disabled { background-color: #ccc; }
-        .info { font-size: 9.5pt; color: #222; text-align: center; background: #fff9e6; padding: 8px; border-radius: 6px; border: 1px solid #ffe8a1; }
-        .section-title { font-weight: bold; color: #111; margin: 20px 0 10px 0; font-size: 11pt; display: flex; align-items: center; }
+        
+        /* 抓取 UID 專用的顯眼強烈樣式 */
+        .uid-box { background-color: #fff0f0; border: 2px dashed #ff4d4d; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 10pt; color: #cc0000; word-break: break-all; }
+        .uid-title { font-weight: bold; font-size: 11pt; color: #ff0000; margin-bottom: 4px; }
+        
+        .section-title { font-weight: bold; color: #111; margin: 20px 0 10px 0; font-size: 11pt; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>🏍️ 苗栗維調 加班/油資報支</h2>
-    <div id="user-info" class="info">正在讀取 LINE 身分，請稍候...</div>
-    <br>
+    
+    <div class="uid-box">
+        <div class="uid-title">🚨 您的 LINE 身分識別碼 (UID)：</div>
+        <div id="display-uid">正在向 LINE 系統讀取中，請稍候...</div>
+    </div>
+
     <form id="report-form">
         <div class="form-group">
             <label>1. 選擇報支日期</label>
@@ -66,7 +73,7 @@
 </div>
 
 <script>
-    // ⚠️ 請在下方填入你的 LINE LIFF ID 與 Google WebApp 網址
+    // ⚠️ 請在此處換上你的 LINE LIFF ID 以及 步驟二的 Google 網址
     const MY_LIFF_ID = '2010178820-ANKUf0Qe'; 
     const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxYtIsyFSwA_qDnqSekw4i-hqnPQitBbRxzqpnJvNj-Fo6JMf0ifJ0jVJKee-ExdUlk/exec'; 
 
@@ -80,8 +87,10 @@
             } else {
                 const profile = await liff.getProfile();
                 userId = profile.userId;
-// 加上下面這一行，直接把 UID 吐在手機畫面上！
-document.getElementById('user-info').innerHTML = "經辦同仁：<b>" + profile.displayName + "</b><br><span style='color:blue; font-size:9pt;'>您的UID (長按複製)：" + userId + "</span>";
+                
+                // 成功抓到！強制把 UID 吐在紅色框框裡，並讓同仁可以長按複製
+                document.getElementById('display-uid').innerHTML = "<b style='color:#000; font-size:11pt; background:#fff; padding:2px 4px; border:1px solid #ccc;'>" + userId + "</b><br><small style='color:#666;'>(請長按上方這串字複製，並傳給管理員綁定)</small>";
+                
                 document.getElementById('submit-btn').disabled = false;
                 
                 // 自動將日期預設為今天
@@ -92,7 +101,7 @@ document.getElementById('user-info').innerHTML = "經辦同仁：<b>" + profile.
             }
         } catch (error) {
             console.error(error);
-            document.getElementById('user-info').innerText = "連線失敗，請確保在 LINE 軟體內打開此連結";
+            document.getElementById('display-uid').innerText = "❌ 連線失敗！原因：" + error.message + "。請確保在手機 LINE 軟體內打開。";
         }
     }
 
@@ -117,7 +126,7 @@ document.getElementById('user-info').innerHTML = "經辦同仁：<b>" + profile.
             body: JSON.stringify(formData)
         })
         .then(() => {
-            alert('🎉 報支成功！資料已寫入加班單！');
+            alert('🎉 報支成功！資料已成功寫入 Google 試算表！');
             liff.closeWindow();
         })
         .catch(err => {
