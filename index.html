@@ -11,11 +11,16 @@
         h2 { margin-top: 0; color: #d2232a; font-size: 15pt; text-align: center; letter-spacing: 1px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 10.5pt; color: #444; }
-        input, select { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 11pt; -webkit-appearance: none; background-color: #fff; }
+        input, select { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 11pt; background-color: #fff; }
         .btn { width: 100%; background-color: #d2232a; color: white; border: none; padding: 13px; border-radius: 6px; font-size: 12pt; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn:disabled { background-color: #ccc; }
         .uid-box { background-color: #f0fff4; border: 2px dashed #28a745; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 10pt; color: #155724; word-break: break-all; text-align: center; }
         .section-title { font-weight: bold; color: #111; margin: 20px 0 10px 0; font-size: 11pt; }
+        
+        /* 時間組合框排版，讓小時與分鐘並排 */
+        .time-combo { display: flex; align-items: center; gap: 8px; }
+        .time-combo select { flex: 1; }
+        .time-separator { font-weight: bold; font-size: 14pt; color: #555; }
     </style>
 </head>
 <body>
@@ -43,16 +48,48 @@
         </div>
 
         <div style="border-top: 2px dashed #eee; margin: 20px 0;"></div>
-        <div class="section-title">🏍️ 機車油資巡邏時間 (若無巡邏請留空)</div>
+        <div class="section-title">🏍️ 機車油資巡邏時間 (未巡邏請保持預設不變)</div>
 
         <div class="form-group">
             <label>巡邏開始時間</label>
-            <input type="time" id="gas-start">
+            <div class="time-combo">
+                <select id="start-hour">
+                    <option value="">-- 小時 --</option>
+                    <script>
+                        for(let i=0; i<24; i++) {
+                            let hr = i < 10 ? '0' + i : i;
+                            document.write(`<option value="${hr}">${hr} 點</option>`);
+                        }
+                    </script>
+                </select>
+                <div class="time-separator">:</div>
+                <select id="start-minute">
+                    <option value="">-- 分鐘 --</option>
+                    <option value="00">00 分</option>
+                    <option value="30">30 分</option>
+                </select>
+            </div>
         </div>
 
         <div class="form-group">
             <label>巡邏結束時間</label>
-            <input type="time" id="gas-end">
+            <div class="time-combo">
+                <select id="end-hour">
+                    <option value="">-- 小時 --</option>
+                    <script>
+                        for(let i=0; i<24; i++) {
+                            let hr = i < 10 ? '0' + i : i;
+                            document.write(`<option value="${hr}">${hr} 點</option>`);
+                        }
+                    </script>
+                </select>
+                <div class="time-separator">:</div>
+                <select id="end-minute">
+                    <option value="">-- 分鐘 --</option>
+                    <option value="00">00 分</option>
+                    <option value="30">30 分</option>
+                </select>
+            </div>
         </div>
 
         <button type="submit" class="btn" id="submit-btn" disabled>確認送出報支</button>
@@ -92,12 +129,25 @@
         document.getElementById('submit-btn').disabled = true;
         document.getElementById('submit-btn').innerText = "寫入試算表中...";
 
+        // 組合開始時間與結束時間 (格式固定為 HH:MM)
+        let gasStartStr = "";
+        let gasEndStr = "";
+        
+        const sHr = document.getElementById('start-hour').value;
+        const sMin = document.getElementById('start-minute').value;
+        const eHr = document.getElementById('end-hour').value;
+        const eMin = document.getElementById('end-minute').value;
+        
+        // 只有在小時跟分鐘都有選的時候，才組合時間字串
+        if (sHr && sMin) gasStartStr = sHr + ":" + sMin;
+        if (eHr && eMin) gasEndStr = eHr + ":" + eMin;
+
         const formData = {
             userId: userId,
             date: document.getElementById('report-date').value,
             otHours: document.getElementById('ot-hours').value,
-            gasStart: document.getElementById('gas-start').value,
-            gasEnd: document.getElementById('gas-end').value
+            gasStart: gasStartStr,
+            gasEnd: gasEndStr
         };
 
         fetch(GAS_WEBAPP_URL, {
