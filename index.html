@@ -11,7 +11,7 @@
         h2 { margin-top: 0; color: #d2232a; font-size: 15pt; text-align: center; letter-spacing: 1px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 10.5pt; color: #444; }
-        input, select { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 11pt; }
+        input, select { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 11pt; -webkit-appearance: none; background-color: #fff; }
         .btn { width: 100%; background-color: #d2232a; color: white; border: none; padding: 13px; border-radius: 6px; font-size: 12pt; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn:disabled { background-color: #ccc; }
         .uid-box { background-color: #f0fff4; border: 2px dashed #28a745; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 10pt; color: #155724; word-break: break-all; text-align: center; }
@@ -36,11 +36,9 @@
         <div class="form-group">
             <label>2. 請選擇「今日額外加班時數」</label>
             <select id="ot-hours">
-                <option value="PRESET">維持班表預設 (不額外加班)</option>
-                <option value="0">0 小時 (今天完全沒加班，取消預設時數)</option>
-                <option value="1">額外加班 1 小時 (累計2H)</option>
-                <option value="2">額外加班 2 小時 (累計3H)</option>
-                <option value="3">額外加班 3 小時 (累計4H-達上限)</option>
+                <option value="1">1 小時 (累計 2H)</option>
+                <option value="2">2 小時 (累計 3H)</option>
+                <option value="3">3 小時 (累計 4H-達上限)</option>
             </select>
         </div>
 
