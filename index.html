@@ -14,11 +14,7 @@
         input, select { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 11pt; }
         .btn { width: 100%; background-color: #d2232a; color: white; border: none; padding: 13px; border-radius: 6px; font-size: 12pt; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn:disabled { background-color: #ccc; }
-        
-        /* 抓取 UID 專用的顯眼強烈樣式 */
-        .uid-box { background-color: #fff0f0; border: 2px dashed #ff4d4d; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 10pt; color: #cc0000; word-break: break-all; }
-        .uid-title { font-weight: bold; font-size: 11pt; color: #ff0000; margin-bottom: 4px; }
-        
+        .uid-box { background-color: #f0fff4; border: 2px dashed #28a745; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 10pt; color: #155724; word-break: break-all; text-align: center; }
         .section-title { font-weight: bold; color: #111; margin: 20px 0 10px 0; font-size: 11pt; }
     </style>
 </head>
@@ -28,8 +24,7 @@
     <h2>🏍️ 苗栗維調 加班/油資報支</h2>
     
     <div class="uid-box">
-        <div class="uid-title">🚨 您的 LINE 身分識別碼 (UID)：</div>
-        <div id="display-uid">正在向 LINE 系統讀取中，請稍候...</div>
+        <div id="display-uid">身分驗證成功，連線安全</div>
     </div>
 
     <form id="report-form">
@@ -39,19 +34,18 @@
         </div>
 
         <div class="form-group">
-            <label>2. 變更今日加班時數 (若非預設狀態才需修改)</label>
+            <label>2. 請選擇「今日額外加班時數」</label>
             <select id="ot-hours">
-                <option value="PRESET">維持班表預設時數 (1小時/早加2H)</option>
-                <option value="0">0 小時 (今天沒加班)</option>
-                <option value="1">1 小時</option>
-                <option value="2">2 小時</option>
-                <option value="3">3 小時</option>
-                <option value="4">4 小時 (每日上限)</option>
+                <option value="PRESET">維持班表預設 (不額外加班)</option>
+                <option value="0">0 小時 (今天完全沒加班，取消預設時數)</option>
+                <option value="1">額外加班 1 小時 (累計2H)</option>
+                <option value="2">額外加班 2 小時 (累計3H)</option>
+                <option value="3">額外加班 3 小時 (累計4H-達上限)</option>
             </select>
         </div>
 
         <div style="border-top: 2px dashed #eee; margin: 20px 0;"></div>
-        <div class="section-title">🏍️ 機車油資補助 (若無巡邏請留空)</div>
+        <div class="section-title">🏍️ 機車油資巡邏時間 (若無巡邏請留空)</div>
 
         <div class="form-group">
             <label>巡邏開始時間</label>
@@ -63,17 +57,12 @@
             <input type="time" id="gas-end">
         </div>
 
-        <div class="form-group">
-            <label>申請油資補助金額 (元)</label>
-            <input type="number" id="gas-amount" placeholder="例如: 150" min="0">
-        </div>
-
         <button type="submit" class="btn" id="submit-btn" disabled>確認送出報支</button>
     </form>
 </div>
 
 <script>
-    // ⚠️ 請在此處換上你的 LINE LIFF ID 以及 步驟二的 Google 網址
+    // ⚠️ 記得換上你的 LINE LIFF ID 與 你的 Google 網址
     const MY_LIFF_ID = '2010178820-ANKUf0Qe'; 
     const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxYtIsyFSwA_qDnqSekw4i-hqnPQitBbRxzqpnJvNj-Fo6JMf0ifJ0jVJKee-ExdUlk/exec'; 
 
@@ -87,36 +76,30 @@
             } else {
                 const profile = await liff.getProfile();
                 userId = profile.userId;
-                
-                // 成功抓到！強制把 UID 吐在紅色框框裡，並讓同仁可以長按複製
-                document.getElementById('display-uid').innerHTML = "<b style='color:#000; font-size:11pt; background:#fff; padding:2px 4px; border:1px solid #ccc;'>" + userId + "</b><br><small style='color:#666;'>(請長按上方這串字複製，並傳給管理員綁定)</small>";
-                
+                document.getElementById('display-uid').innerHTML = "經辦同仁：<b>" + profile.displayName + "</b>";
                 document.getElementById('submit-btn').disabled = false;
                 
-                // 自動將日期預設為今天
                 const now = new Date();
                 const offset = now.getTimezoneOffset();
                 const localDate = new Date(now.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
                 document.getElementById('report-date').value = localDate;
             }
         } catch (error) {
-            console.error(error);
-            document.getElementById('display-uid').innerText = "❌ 連線失敗！原因：" + error.message + "。請確保在手機 LINE 軟體內打開。";
+            document.getElementById('display-uid').innerText = "❌ 讀取失敗，請在 LINE 內打開。";
         }
     }
 
     document.getElementById('report-form').addEventListener('submit', function(e) {
         e.preventDefault();
         document.getElementById('submit-btn').disabled = true;
-        document.getElementById('submit-btn').innerText = "連線後台寫入中...";
+        document.getElementById('submit-btn').innerText = "寫入試算表中...";
 
         const formData = {
             userId: userId,
             date: document.getElementById('report-date').value,
             otHours: document.getElementById('ot-hours').value,
             gasStart: document.getElementById('gas-start').value,
-            gasEnd: document.getElementById('gas-end').value,
-            gasAmount: document.getElementById('gas-amount').value
+            gasEnd: document.getElementById('gas-end').value
         };
 
         fetch(GAS_WEBAPP_URL, {
@@ -126,11 +109,11 @@
             body: JSON.stringify(formData)
         })
         .then(() => {
-            alert('🎉 報支成功！資料已成功寫入 Google 試算表！');
+            alert('🎉 報支成功！');
             liff.closeWindow();
         })
         .catch(err => {
-            alert('系統錯誤，請稍後再試：' + err);
+            alert('系統錯誤：' + err);
             document.getElementById('submit-btn').disabled = false;
             document.getElementById('submit-btn').innerText = "確認送出報支";
         });
