@@ -39,12 +39,24 @@
         </div>
 
         <div class="form-group">
-            <label>2. 請選擇「今日額外加班時數」</label>
-            <select id="ot-hours">
-                <option value="1">1 小時 (累計 2H)</option>
-                <option value="2">2 小時 (累計 3H)</option>
-                <option value="3">3 小時 (累計 4H-達上限)</option>
-            </select>
+            <label>2. 請輸入「今日實際下班時間」</label>
+            <div class="time-combo">
+                <select id="duty-end-hour" required>
+                    <option value="">-- 小時 --</option>
+                    <script>
+                        for(let i=0; i<24; i++) {
+                            let hr = i < 10 ? '0' + i : i;
+                            document.write(`<option value="${hr}">${hr} 點</option>`);
+                        }
+                    </script>
+                </select>
+                <div class="time-separator">:</div>
+                <select id="duty-end-minute" required>
+                    <option value="">-- 分鐘 --</option>
+                    <option value="00">00 分</option>
+                    <option value="30">30 分</option>
+                </select>
+            </div>
         </div>
 
         <div style="border-top: 2px dashed #eee; margin: 20px 0;"></div>
@@ -129,7 +141,12 @@
         document.getElementById('submit-btn').disabled = true;
         document.getElementById('submit-btn').innerText = "寫入試算表中...";
 
-        // 組合開始時間與結束時間 (格式固定為 HH:MM)
+        // 組合下班時間 (格式固定為 HH:MM)
+        const dEHr = document.getElementById('duty-end-hour').value;
+        const dEMin = document.getElementById('duty-end-minute').value;
+        let dutyEndTimeStr = dEHr + ":" + dEMin;
+
+        // 組合油資巡邏時間
         let gasStartStr = "";
         let gasEndStr = "";
         
@@ -138,14 +155,14 @@
         const eHr = document.getElementById('end-hour').value;
         const eMin = document.getElementById('end-minute').value;
         
-        // 只有在小時跟分鐘都有選的時候，才組合時間字串
         if (sHr && sMin) gasStartStr = sHr + ":" + sMin;
         if (eHr && eMin) gasEndStr = eHr + ":" + eMin;
 
+        // 💡 關鍵變更：將 otHours 改成傳送 endTime
         const formData = {
             userId: userId,
             date: document.getElementById('report-date').value,
-            otHours: document.getElementById('ot-hours').value,
+            endTime: dutyEndTimeStr,
             gasStart: gasStartStr,
             gasEnd: gasEndStr
         };
